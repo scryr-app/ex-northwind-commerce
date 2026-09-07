@@ -6,6 +6,19 @@ from northwind_api.main import app
 client = TestClient(app)
 
 
+def test_liveness_does_not_contact_dependencies(monkeypatch):
+    def unexpected_connection(*args, **kwargs):
+        raise AssertionError("Liveness must not contact Postgres or Redis")
+
+    monkeypatch.setattr("northwind_api.main.psycopg.connect", unexpected_connection)
+    monkeypatch.setattr("northwind_api.main.redis.from_url", unexpected_connection)
+
+    response = client.get("/health/live")
+
+    assert response.status_code == 200
+    assert response.json() == {"api": "ok"}
+
+
 def test_catalog_returns_products():
     response = client.get("/catalog")
 

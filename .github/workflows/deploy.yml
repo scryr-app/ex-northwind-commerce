@@ -1,34 +1,41 @@
-name: Deploy
+name: Verify deployment
 
+# Render deploys main automatically after CI passes (see render.yaml).
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: Target environment
+      url:
+        description: Render service URL (https://your-service.onrender.com)
         required: true
-        type: choice
-        options:
-          - staging
-          - production
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
-  promote:
-    name: Promote
+  smoke:
+    name: Verify hosted demo
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    permissions:
-      contents: read
-      id-token: write
+    timeout-minutes: 10
+    env:
+      API_URL: ${{ inputs.url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select environment
-        run: echo "tfvars=infra/environments/${{ inputs.environment }}.tfvars" >> "$GITHUB_OUTPUT"
-        id: env
-      - name: Terraform plan stub
+      - name: Validate the deployment URL
         run: |
-          echo "terraform init"
-          echo "terraform plan -var-file=${{ steps.env.outputs.tfvars }}"
-      - name: Promote release stub
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+
+          url = urlsplit(os.environ['API_URL'])
+          if not (url.scheme == 'https' and url.hostname and
+                  url.hostname.endswith('.onrender.com') and
+                  not url.username and not url.password and
+                  not url.port and url.path in ('', '/') and
+                  not url.query and not url.fragment):
+              raise SystemExit('Enter an HTTPS onrender.com service URL without a path or credentials.')
+          PY
+      - name: Verify API and storefront
         run: |
-          echo "Promoting northwind-web and northwind-api to ${{ inputs.environment }}"
-          echo "A real workflow would publish images, apply Terraform, and run smoke tests."
+          ./scripts/smoke-test.sh
+          curl --fail --silent --show-error --max-time 90 "$API_URL/" | grep -q '<div id="root">'

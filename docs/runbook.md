@@ -27,10 +27,10 @@ Use `STRIPE_SECRET_KEY=sk_test_stub` for local development. The API will return 
 
 Use a real Stripe test key only in isolated test environments. Never commit real keys.
 
-## Promotion
+## Hosted demo
 
-1. Confirm CI is green on `main`.
-2. Trigger the `Deploy` workflow.
-3. Select `staging`.
-4. Run smoke tests.
-5. Trigger the workflow again for `production`.
+Follow [the free hosting guide](hosting.md) to provision one Render Free service.
+Render deploys `main` after CI passes. Run **Verify deployment** in GitHub Actions
+with the assigned Render URL to check the storefront and stubbed checkout.
+Use `/health/live` for platform probes; `/health` also checks optional databases.
+This setup has one demo environment, with no staging/production promotion.

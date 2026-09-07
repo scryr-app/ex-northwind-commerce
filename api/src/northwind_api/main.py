@@ -4,6 +4,7 @@ import psycopg
 import redis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from northwind_api.catalog import CATALOG, get_product
 from northwind_api.config import get_settings
@@ -26,6 +27,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/health/live")
+def liveness() -> dict[str, str]:
+    # Platform probes must not wake optional databases or consume their quotas.
+    return {"api": "ok"}
 
 
 @app.get("/health")
@@ -104,3 +111,9 @@ def checkout(request: CheckoutRequest) -> CheckoutResponse:
         risk_score=risk_score,
         status=payment["status"],
     )
+
+
+# Register last so API routes take precedence over the storefront.
+# Local Vite development continues to use its separate dev server.
+if settings.static_dir:
+    app.mount("/", StaticFiles(directory=settings.static_dir, html=True), name="web")

@@ -22,6 +22,11 @@ Northwind Commerce is organized around a buyer-facing React storefront and a Fas
 
 The sample risk model is deliberately transparent. It increases score for high order value, large quantities, expedited shipping, and cold-chain seafood items. Production systems should replace this with a policy engine or model that uses audited features.
 
-## Deployment Promotion
+## Hosted demo
 
-`deploy.yml` models manual promotion to staging or production. The Terraform files are stubs that show the variables a real deployment would bind to managed compute, database, cache, secrets, and DNS resources.
+`render.yaml` defines one free Docker service that serves the React build through
+FastAPI. Render deploys `main` after GitHub Actions checks pass; `deploy.yml`
+verifies an existing deployment. See [hosting](hosting.md) for setup and limits.
+The demo currently uses an in-memory catalog and does not persist checkout orders.
+Postgres and Redis are optional future hosted dependencies; the Terraform files
+remain illustrative stubs and are not used by this deployment.

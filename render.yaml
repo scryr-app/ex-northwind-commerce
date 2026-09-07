@@ -1,0 +1,20 @@
+# One free service serves both the storefront and API.
+# Catalog and stub checkout work without managed databases or credentials.
+services:
+  - type: web
+    name: northwind-commerce
+    runtime: docker
+    plan: free
+    region: ohio
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    healthCheckPath: /health/live
+    envVars:
+      - key: APP_ENV
+        value: demo
+      - key: STRIPE_SECRET_KEY
+        value: sk_test_stub
+      - key: CORS_ORIGINS
+        value: ""

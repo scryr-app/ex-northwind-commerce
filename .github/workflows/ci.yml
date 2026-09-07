@@ -5,6 +5,13 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   web:
     name: Web
@@ -17,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm ci
       - run: npm test -- --run
       - run: npm run build
 
@@ -57,3 +64,17 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest
+
+  hosting:
+    name: Hosting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the deployment image
+        run: docker build -t northwind-commerce:ci .
+      - name: Verify the hosted storefront and API
+        run: |
+          docker run -d --name northwind -p 10000:10000 -e STRIPE_SECRET_KEY=sk_test_stub northwind-commerce:ci
+          trap 'docker logs northwind; docker rm -f northwind' EXIT
+          API_URL=http://localhost:10000 ./scripts/smoke-test.sh
+          curl --fail --silent --show-error http://localhost:10000/ | grep -q '<div id="root">'

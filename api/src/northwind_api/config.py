@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     cors_origins: str = "http://localhost:5173"
     stripe_secret_key: str = "sk_test_stub"
+    static_dir: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

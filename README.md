@@ -12,6 +12,24 @@ Northwind Commerce is a modern B2B storefront sample that demonstrates web, API,
 - GitHub Actions for CI and deploy promotion
 - Terraform stubs for environment wiring
 
+## Free Hosting
+
+The simplest hosted demo uses **one free Render web service** for both React and
+FastAPI. The root `Dockerfile` builds the frontend and serves it from FastAPI on
+the same URL. `render.yaml` selects the free plan and deploys `main` after CI passes.
+
+[Deploy on Render](https://render.com/deploy?repo=https://github.com/scryr-app/ex-northwind-commerce)
+
+The deployment files must be pushed to GitHub before using that link. Sign in to
+Render, connect this repository, and confirm the blueprint contains only one
+**Free** web service. No database, payment key, custom domain, or paid add-on is
+needed for catalog browsing and stubbed checkout.
+
+This is a sample environment: orders are not persisted and payments are stubbed.
+Postgres and Redis remain available in local Docker Compose and can be connected
+later. Free Render services sleep when idle, so the first request can take about
+a minute. See [hosting setup and verification](docs/hosting.md).
+
 ## Quick Start
 
 ```bash
