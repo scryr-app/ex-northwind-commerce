@@ -17,10 +17,10 @@ const eventProperties: Record<keyof Events, readonly string[]> = {
   checkout_failed: ["line_count", "quantity", "total_cents"]
 };
 
-// Keep SDK identity fields needed for anonymous funnels, but exclude URLs,
+// Keep the public ingestion token and identity fields needed for anonymous funnels, but exclude URLs,
 // referrers, DOM text, person properties, and arbitrary response/error data.
 const sdkProperties = new Set([
-  "distinct_id", "$device_id", "$session_id", "$window_id", "$lib", "$lib_version"
+  "token", "distinct_id", "$device_id", "$session_id", "$window_id", "$lib", "$lib_version"
 ]);
 
 export const sanitizeEvent: BeforeSendFn = (event) => {

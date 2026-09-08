@@ -13,7 +13,7 @@ Northwind Commerce is a modern B2B storefront sample that demonstrates web, API,
 | Render blueprint | [Infrastructure configuration and sync status](https://dashboard.render.com/blueprint/exs-dafi268u01pc73ai2tdg) |
 | Grafana dashboard | [Northwind Commerce: request rate, errors, latency, checkout results, and logs](https://nimbleomelette894.grafana.net/d/northwind-observability/northwind-commerce) |
 | Grafana Explore | [Query metrics, logs, and traces](https://nimbleomelette894.grafana.net/explore) |
-| PostHog | [Product analytics project](https://us.posthog.com/project/598963) · [Live events](https://us.posthog.com/project/598963/activity/explore) |
+| PostHog | [Northwind dashboard](https://us.posthog.com/project/598963/dashboard/2074658) · [Live events](https://us.posthog.com/project/598963/activity/explore) |
 | CI | [Frontend and API checks](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/ci.yml) |
 | Integration tests | [Docker storefront/API tests](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/integration.yml) |
 | Public uptime | [Scheduled availability checks and manual runs](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/uptime.yml) |

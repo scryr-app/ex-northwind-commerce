@@ -5,7 +5,7 @@ funnel. It needs no extra Render service or collector.
 
 - [PostHog project](https://us.posthog.com/project/598963)
 - [Live events](https://us.posthog.com/project/598963/activity/explore)
-- [Dashboards](https://us.posthog.com/project/598963/dashboard)
+- [Northwind dashboard](https://us.posthog.com/project/598963/dashboard/2074658)
 - [Usage and billing](https://us.posthog.com/organization/billing)
 
 ## Events
