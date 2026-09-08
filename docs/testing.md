@@ -7,6 +7,7 @@ Postgres 16 and Redis 7, without needing Render, secrets, or external paid servi
 
 ## Coverage
 
+- Authenticated metrics expose request/checkout counts and latency; requests return generated IDs.
 - The storefront HTML and compiled JavaScript/CSS are served from the API origin.
 - The frontend bundle does not point at the local development API.
 - API routes remain reachable alongside the static-file mount.

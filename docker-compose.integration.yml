@@ -7,6 +7,7 @@ services:
       - "127.0.0.1:${INTEGRATION_PORT:-10000}:10000"
     environment:
       APP_ENV: integration
+      METRICS_TOKEN: integration-metrics-token
       STRIPE_SECRET_KEY: sk_test_stub
       DATABASE_URL: postgresql://northwind:northwind@postgres:5432/northwind
       REDIS_URL: redis://redis:6379/0

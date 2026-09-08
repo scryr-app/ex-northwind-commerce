@@ -75,6 +75,13 @@ Smoke test:
 ./scripts/smoke-test.sh
 ```
 
+## Monitoring
+
+JSON request logs, protected Prometheus metrics, optional Grafana Cloud OTLP
+export, scheduled public uptime checks, and weekly dependency updates are
+configured in this repository. See [observability setup](docs/observability.md)
+for the Free Grafana account connection, dashboard import, and alert settings.
+
 ## Integration Tests
 
 The [integration suite](tests/integration/test_hosted_app.py) exercises the shipped

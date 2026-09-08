@@ -18,3 +18,11 @@ services:
         value: sk_test_stub
       - key: CORS_ORIGINS
         value: ""
+      - key: METRICS_TOKEN
+        generateValue: true
+      - key: OTEL_TRACE_SAMPLE_RATIO
+        value: "0.1"
+      - key: REQUEST_LOG_SAMPLE_RATIO
+        value: "0.1"
+      - key: OTEL_METRIC_EXPORT_INTERVAL
+        value: "60"
