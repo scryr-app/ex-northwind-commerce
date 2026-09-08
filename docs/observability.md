@@ -3,7 +3,28 @@
 Use one Render Free service and one Grafana Cloud Free stack. No separate
 collector, worker, paid monitoring agent, or persistent disk is needed.
 
-## Included in this change
+## Connected deployment
+
+Verified on 2026-09-07 (US Central): the Render service exports metrics, logs, and traces to
+the `nimbleomelette894` Grafana Cloud stack. The account's current plan is
+**Cloud Free**, with an introductory unlimited-usage trial. No paid upgrade was
+selected.
+
+- [Northwind dashboard](https://nimbleomelette894.grafana.net/d/northwind-observability/northwind-commerce)
+- [Explore metrics, logs, and traces](https://nimbleomelette894.grafana.net/explore)
+- [Render service](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg)
+
+The `northwind-render-telemetry` access policy is scoped to this stack and grants
+only `metrics:write`, `logs:write`, and `traces:write`. Its
+`northwind-render-otlp` token is stored in Render's environment, never in this
+repository. Both sampling ratios remain at `0.1`; metrics export every minute.
+Allow a few minutes for new metrics to appear. Rate and latency charts need
+traffic after the first metric export; checkout charts need checkout traffic.
+
+Cloud alert rules and email notification routing have not been activated.
+The GitHub Public uptime workflow remains the availability check.
+
+## Included services
 
 - JSON request logs on stdout, visible in Render after deployment.
 - Protected Prometheus metrics at `/metrics`: request counts, latency histograms,
@@ -16,9 +37,10 @@ collector, worker, paid monitoring agent, or persistent disk is needed.
   HTML, and the catalog every 30 minutes and on manual dispatch.
 - Weekly Dependabot updates for Python/uv, npm, GitHub Actions, and the Dockerfile.
 
-Grafana export is disabled until its endpoint is configured. Adding these files
-does not create a Grafana account, import a dashboard, or activate cloud alerts.
-Changes must be merged into `main` and deployed before they affect the live app.
+For a new deployment, Grafana export is disabled until its endpoint is configured.
+The files alone do not create a Grafana account, import a dashboard, or activate
+cloud alerts. The connection above has been provisioned separately; future app
+changes must be merged into `main` and deployed before they affect the live app.
 
 ## Connect Grafana Cloud Free
 
