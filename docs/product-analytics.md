@@ -4,9 +4,15 @@ Northwind uses PostHog Cloud's free product analytics allowance for the storefro
 funnel. It needs no extra Render service or collector.
 
 - [PostHog project](https://us.posthog.com/project/598963)
-- [Live events](https://us.posthog.com/project/598963/activity/explore)
+- [Event history](https://us.posthog.com/project/598963/activity/explore)
+- [Live stream](https://us.posthog.com/project/598963/activity/live)
 - [Northwind dashboard](https://us.posthog.com/project/598963/dashboard/2074658)
-- [Usage and billing](https://us.posthog.com/organization/billing)
+- [Project settings](https://us.posthog.com/project/598963/settings/project-details)
+- [Usage and billing](https://us.posthog.com/organization/billing/overview)
+
+The Northwind dashboard shows event counts and the checkout funnel for this app's
+custom events. The starter dashboard relies on automatic pageviews, which this
+integration disables; use the Northwind dashboard to check storefront activity.
 
 ## Events
 

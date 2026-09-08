@@ -9,17 +9,22 @@ Northwind Commerce is a modern B2B storefront sample that demonstrates web, API,
 | Live storefront | [northwind-commerce.onrender.com](https://northwind-commerce.onrender.com) |
 | API documentation | [Swagger UI](https://northwind-commerce.onrender.com/docs) |
 | Public API checks | [Liveness](https://northwind-commerce.onrender.com/health/live) · [Catalog](https://northwind-commerce.onrender.com/catalog) |
-| Render service | [Deploy history, runtime logs, metrics, environment, and settings](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg) |
+| Render service | [Deploy history](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg/deploys) · [Runtime logs](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg/logs) · [CPU/memory metrics](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg/metrics) |
+| Render configuration | [Environment variables](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg/env) · [Service settings](https://dashboard.render.com/web/srv-dafi29v40ujc73bcolgg/settings) |
 | Render blueprint | [Infrastructure configuration and sync status](https://dashboard.render.com/blueprint/exs-dafi268u01pc73ai2tdg) |
 | Grafana dashboard | [Northwind Commerce: request rate, errors, latency, checkout results, and logs](https://nimbleomelette894.grafana.net/d/northwind-observability/northwind-commerce) |
 | Grafana Explore | [Query metrics, logs, and traces](https://nimbleomelette894.grafana.net/explore) |
-| PostHog | [Northwind dashboard](https://us.posthog.com/project/598963/dashboard/2074658) · [Live events](https://us.posthog.com/project/598963/activity/explore) |
+| Grafana plan and usage | [Cloud account and free-plan usage](https://grafana.com/orgs/nimbleomelette894/my-account/manage-plan) |
+| PostHog dashboard | [Northwind event counts and checkout funnel](https://us.posthog.com/project/598963/dashboard/2074658) |
+| PostHog events | [Event history](https://us.posthog.com/project/598963/activity/explore) · [Live stream](https://us.posthog.com/project/598963/activity/live) |
+| PostHog configuration and usage | [Project settings](https://us.posthog.com/project/598963/settings/project-details) · [Usage and billing](https://us.posthog.com/organization/billing/overview) |
+| GitHub repository | [Source code and pull requests](https://github.com/scryr-app/ex-northwind-commerce) · [All workflow runs](https://github.com/scryr-app/ex-northwind-commerce/actions) |
 | CI | [Frontend and API checks](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/ci.yml) |
 | Integration tests | [Docker storefront/API tests](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/integration.yml) |
 | Public uptime | [Scheduled availability checks and manual runs](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/uptime.yml) |
 | Verify deployment | [Run smoke checks against an already deployed service](https://github.com/scryr-app/ex-northwind-commerce/actions/workflows/deploy.yml) |
 
-Render and Grafana administration pages require access to the corresponding account.
+Render, Grafana, and PostHog administration pages require access to the corresponding account.
 
 ## Stack
 
@@ -65,8 +70,11 @@ access to `scryr-app/ex-northwind-commerce`. See
 
 Manage secrets in the Render service's **Environment** settings. Grafana's
 `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_HEADERS` are already configured
-there; keep the authorization header out of Git and frontend variables. Apply
-environment changes with a deployment. The blueprint supplies the remaining demo
+there; keep the authorization header out of Git and frontend variables.
+PostHog's `VITE_POSTHOG_PROJECT_TOKEN` and `VITE_POSTHOG_HOST` are also configured
+there and embedded during the frontend build. Use **Save, rebuild, and deploy**
+after changing them; a restart alone does not update the browser bundle.
+The blueprint supplies the remaining demo
 defaults and generates the protected `/metrics` token. See
 [hosting setup and verification](docs/hosting.md) for runtime settings.
 
@@ -75,7 +83,8 @@ defaults and generates the protected `/metrics` token. See
 Use [Deploy on Render](https://render.com/deploy?repo=https://github.com/scryr-app/ex-northwind-commerce),
 sign in, connect the repository, and confirm the blueprint contains only one
 **Free** web service. A new deployment gets its own URL and requires its own
-[Grafana connection](docs/observability.md). No database, payment key, custom
+[Grafana connection](docs/observability.md) and
+[PostHog project configuration](docs/product-analytics.md). No database, payment key, custom
 domain, or paid add-on is needed for catalog browsing and stubbed checkout.
 
 This is a sample environment: orders are not persisted, authentication is not
@@ -146,6 +155,9 @@ sampling, and alert configuration.
 
 PostHog tracks catalog views, quantity changes, and checkout attempts/results with
 explicit anonymous events. Session replay and automatic click capture are off.
+Use the **Northwind dashboard** above for event counts and the catalog-to-payment-intent
+funnel. The starter dashboard expects automatic pageviews, which this app does not
+send, so its charts can remain empty even when custom events are arriving.
 See [product analytics](docs/product-analytics.md) for the event definitions,
 Render build-time configuration, and free-plan usage.
 
