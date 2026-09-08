@@ -52,12 +52,13 @@ describe("optional product analytics", () => {
     })).not.toThrow();
   });
 
-  it("removes sensitive and automatic properties before sending", async () => {
+  it("preserves ingestion credentials and anonymous identity while removing sensitive properties", async () => {
     const { sanitizeEvent } = await import("../src/analytics");
     const result = sanitizeEvent({
       uuid: "test-event",
       event: "checkout_intent_created",
       properties: {
+        token: "phc_public_ingestion_token",
         distinct_id: "anonymous-random-id",
         $session_id: "random-session",
         line_count: 1, quantity: 2, total_cents: 37800, payment_mode: "stubbed",
@@ -69,6 +70,7 @@ describe("optional product analytics", () => {
       }
     });
     expect(result?.properties).toEqual({
+      token: "phc_public_ingestion_token",
       distinct_id: "anonymous-random-id", $session_id: "random-session",
       line_count: 1, quantity: 2, total_cents: 37800, payment_mode: "stubbed",
       $process_person_profile: false, $geoip_disable: true
