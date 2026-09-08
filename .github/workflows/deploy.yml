@@ -20,7 +20,7 @@ jobs:
     env:
       API_URL: ${{ inputs.url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate the deployment URL
         run: |
           python3 - <<'PY'
