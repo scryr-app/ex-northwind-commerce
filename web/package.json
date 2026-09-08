@@ -9,6 +9,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "posthog-js": "1.428.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
