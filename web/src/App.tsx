@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CartLine, CheckoutResponse, Product, createCheckout, listProducts } from "./api";
 import { cartTotalCents, formatCurrency, riskTone } from "./domain";
+import { trackEvent } from "./analytics";
 
 type QuantityMap = Record<string, number>;
 
@@ -12,10 +13,14 @@ export function App() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
+    let active = true;
     listProducts().then((items) => {
+      if (!active) return;
       setProducts(items);
       setQuantities(Object.fromEntries(items.map((item) => [item.id, item.id === "chai-001" ? 2 : 0])));
+      trackEvent("catalog_viewed", { product_count: items.length });
     });
+    return () => { active = false; };
   }, []);
 
   const cartLines = useMemo(
@@ -40,19 +45,35 @@ export function App() {
     }));
     setCheckout(null);
     setCheckoutError(null);
+    if (Number.isFinite(quantity)) {
+      trackEvent("cart_updated", { product_id: productId, quantity: Math.max(0, quantity) });
+    }
   }
 
   async function submitCheckout() {
     setIsCheckingOut(true);
     setCheckoutError(null);
 
+    const summary = {
+      line_count: cartLines.length,
+      quantity: cartLines.reduce((total, line) => total + line.quantity, 0),
+      total_cents: totalCents
+    };
+    trackEvent("checkout_started", summary);
+
     try {
       const lines: CartLine[] = cartLines.map((line) => ({
         productId: line.product.id,
         quantity: line.quantity
       }));
-      setCheckout(await createCheckout(lines));
+      const result = await createCheckout(lines);
+      setCheckout(result);
+      trackEvent("checkout_intent_created", {
+        ...summary,
+        payment_mode: result.status === "stubbed" ? "stubbed" : "stripe"
+      });
     } catch (error) {
+      trackEvent("checkout_failed", summary);
       setCheckoutError(error instanceof Error ? error.message : "Checkout failed");
     } finally {
       setIsCheckingOut(false);
