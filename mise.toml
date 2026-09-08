@@ -1,0 +1,73 @@
+[tasks."integration:test"]
+description = "Run integration tests with reports: healthy|unavailable [pytest arguments...]"
+dir = "{{config_root}}"
+run = '''
+#!/usr/bin/env bash
+# Run from the repository root; preserve pytest's failure status through tee.
+set -euo pipefail
+
+state=${1:?Usage: mise run integration:test healthy|unavailable [pytest arguments...]}
+case "$state" in
+  healthy|unavailable) ;;
+  *) echo "Unknown dependency state: $state" >&2; exit 2 ;;
+esac
+shift
+results="test-results/$state"
+mkdir -p "$results"
+
+uv run --project api --locked --extra dev pytest tests/integration \
+  --dependency-state "$state" \
+  -vv -ra --tb=long --durations=0 --durations-min=0 --color=no \
+  --junitxml="test-results/integration-$state.xml" \
+  -o junit_logging=all -o junit_suite_name="integration-$state" \
+  --html="$results/report.html" --self-contained-html \
+  --json-report --json-report-file="$results/report.json" \
+  --alluredir="$results/allure-results" --clean-alluredir \
+  --log-file="$results/pytest.log" --log-file-level=INFO \
+  "$@" 2>&1 | tee "$results/console.txt"
+'''
+
+[tasks."integration:summary"]
+description = "Generate integration CSV and Markdown summaries"
+dir = "{{config_root}}"
+run = '''
+#!/usr/bin/env python3
+"""Export pytest JSON results for spreadsheets and the Actions job summary."""
+
+import csv
+import json
+from pathlib import Path
+
+
+def main():
+    root = Path("test-results")
+    root.mkdir(exist_ok=True)
+    lines = [
+        "# Integration test results", "",
+        "| Dependency state | Outcome | Count |",
+        "| --- | --- | ---: |",
+    ]
+    with (root / "tests.csv").open("w", newline="", encoding="utf-8") as output:
+        writer = csv.writer(output)
+        writer.writerow(["dependency_state", "test", "outcome", "duration_seconds"])
+        for state in ("healthy", "unavailable"):
+            report = root / state / "report.json"
+            if not report.exists():
+                lines.append(f"| {state} | Report unavailable (phase did not finish) | — |")
+                continue
+            data = json.loads(report.read_text(encoding="utf-8"))
+            lines.append(f"| {state} | pytest exit code | {data['exitcode']} |")
+            for outcome, count in sorted(data.get("summary", {}).items()):
+                lines.append(f"| {state} | {outcome} | {count} |")
+            for test in data.get("tests", []):
+                duration = sum(test.get(phase, {}).get("duration", 0)
+                               for phase in ("setup", "call", "teardown"))
+                writer.writerow([state, test["nodeid"], test["outcome"], duration])
+    lines.extend(["", "Download **integration-results** for HTML, JUnit XML, JSON, "
+                  "CSV, Allure result data, timing output, and logs.", ""])
+    (root / "summary.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
+'''
