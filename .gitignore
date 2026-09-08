@@ -11,3 +11,4 @@ __pycache__/
 *.pyc
 *.egg-info/
 *.scryr
+test-results/

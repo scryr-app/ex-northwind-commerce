@@ -31,24 +31,6 @@ jobs:
   api:
     name: API
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: northwind
-          POSTGRES_USER: northwind
-          POSTGRES_PASSWORD: northwind
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
     defaults:
       run:
         working-directory: api
@@ -64,17 +46,3 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest
-
-  hosting:
-    name: Hosting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build the deployment image
-        run: docker build -t northwind-commerce:ci .
-      - name: Verify the hosted storefront and API
-        run: |
-          docker run -d --name northwind -p 10000:10000 -e STRIPE_SECRET_KEY=sk_test_stub northwind-commerce:ci
-          trap 'docker logs northwind; docker rm -f northwind' EXIT
-          API_URL=http://localhost:10000 ./scripts/smoke-test.sh
-          curl --fail --silent --show-error http://localhost:10000/ | grep -q '<div id="root">'

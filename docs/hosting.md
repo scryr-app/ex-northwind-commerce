@@ -31,8 +31,10 @@ Compose for development; connect managed instances when implementing persistence
 
 ## CI/CD
 
-GitHub Actions runs frontend tests/build, API tests, and an actual Docker build
-with hosted storefront/API smoke checks. Render's `checksPass` trigger deploys
+GitHub Actions runs frontend tests/build and API unit tests. The dedicated
+**Integration tests** workflow builds the actual deployment image and tests it
+over HTTP with real Postgres/Redis, then repeats with those dependencies stopped.
+See [testing](testing.md) for coverage and local commands. Render's `checksPass` trigger deploys
 `main` after its checks pass. The initial blueprint creation also builds the image.
 The separate **Verify deployment** workflow checks an already deployed service;
 it does not trigger a deployment or claim that one has succeeded.

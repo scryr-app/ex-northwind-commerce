@@ -75,6 +75,16 @@ Smoke test:
 ./scripts/smoke-test.sh
 ```
 
+## Integration Tests
+
+The [integration suite](tests/integration/test_hosted_app.py) exercises the shipped
+frontend/API over HTTP, with real Postgres and Redis connections and with both
+services stopped. It covers catalog-to-checkout flow, request validation,
+inventory errors, frontend assets, CORS, and health reporting.
+
+[Integration tests](.github/workflows/integration.yml) run on pull requests, pushes
+to `main`, and manual dispatch. See [local instructions](docs/testing.md).
+
 ## Core Manifests
 
 The sample surfaces five core manifests in `index.scry`:
