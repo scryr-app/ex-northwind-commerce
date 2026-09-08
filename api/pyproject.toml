@@ -21,9 +21,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "allure-pytest>=2.13.5",
   "httpx>=0.28.1",
   "pytest>=8.3.4",
-  "pytest-cov>=6.0.0"
+  "pytest-cov>=6.0.0",
+  "pytest-html>=4.1.1",
+  "pytest-json-report>=1.5.0",
 ]
 
 [tool.pytest.ini_options]

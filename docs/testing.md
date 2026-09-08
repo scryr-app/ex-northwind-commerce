@@ -28,7 +28,7 @@ browser JavaScript. Real payments are never used.
 
 ## Run locally
 
-Requirements: Docker with Compose, Python 3.12+, and uv. Run from the repository root:
+Requirements: Docker with Compose, Python 3.12+, uv, and mise. Run from the repository root:
 
 ```sh
 uv sync --project api --locked --extra dev
@@ -52,9 +52,31 @@ Postgres and Redis are accessible only inside the isolated Compose network.
 `.github/workflows/integration.yml` runs on every pull request, on pushes to
 `main`, and manually through **Actions → Integration tests → Run workflow**.
 It builds the image once and runs the suite in both dependency states. A failure
-in either phase fails the job. Container logs and JUnit reports are uploaded as
-`integration-results`, retained for seven days; containers are cleaned up even
-when a test fails. No repository secrets are required.
+in either phase fails the job. Reports are uploaded as `integration-results`, retained for seven days, even
+when a test fails. The artifact contains:
+
+- JUnit XML for each dependency state (`integration-healthy.xml` and
+  `integration-unavailable.xml`).
+- Standalone HTML reports (`healthy/report.html`, `unavailable/report.html`).
+- Detailed pytest JSON reports with outcomes, timings, and failure details.
+- Allure result data and captured attachments in each state's `allure-results/`
+  directory, ready for `allure generate` with a separately installed Allure CLI.
+- Console transcripts with full tracebacks, all test durations, and outcome summaries.
+- Per-state pytest logs, combined container logs, and container status JSON.
+- `tests.csv` with per-test outcomes and setup/call/teardown duration totals.
+- `summary.md`, also displayed in the GitHub Actions job summary, including
+  missing reports for phases that could not finish.
+
+Containers are cleaned up even when a test fails. No repository secrets are required.
+Application code coverage is not collected: the application runs in a separate
+container, outside the pytest process.
+
+Reporting tasks are defined inline in the root `mise.toml`.
+To generate the same reports locally, replace each pytest command above with
+`mise run integration:test healthy` or
+`mise run integration:test unavailable`, then run
+`mise run integration:summary`. Additional pytest arguments, such as
+`--base-url http://127.0.0.1:10001`, can follow the state argument.
 
 Existing **CI** jobs continue running unit tests. **Verify deployment** remains a
 separate smoke test for the public Render URL, so a hosting routing outage is
