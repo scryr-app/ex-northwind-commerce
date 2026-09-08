@@ -1,0 +1,28 @@
+name: Public uptime
+
+on:
+  schedule:
+    # Less frequent than Render's 15-minute idle window; not a keep-warm service.
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-uptime
+  cancel-in-progress: false
+
+jobs:
+  availability:
+    name: Public storefront and API
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      UPTIME_URL: ${{ vars.NORTHWIND_PUBLIC_URL || 'https://northwind-commerce.onrender.com' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check public routing and application responses
+        run: python3 scripts/check-uptime.py

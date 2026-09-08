@@ -161,3 +161,27 @@ def test_api_routes_take_precedence_over_static_mount(client):
     assert response.status_code == 200
     assert "/checkout" in response.json()["paths"]
     assert "/health/live" in response.json()["paths"]
+
+
+def test_response_has_a_generated_request_id(client):
+    response = client.get("/catalog", headers={"X-Request-ID": "untrusted-client-value"})
+    assert response.status_code == 200
+    assert len(response.headers["x-request-id"]) == 32
+    assert response.headers["x-request-id"] != "untrusted-client-value"
+
+
+def test_metrics_require_bearer_authentication(client):
+    assert client.get("/metrics").status_code == 401
+    assert client.get("/metrics", headers={"Authorization": "Bearer wrong"}).status_code == 401
+
+
+def test_metrics_cover_requests_checkout_and_latency(client, products):
+    client.get("/catalog")
+    client.post("/checkout", json=payload(products[0]["id"]))
+    response = client.get("/metrics", headers={"Authorization": "Bearer integration-metrics-token"})
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    assert "northwind_http_requests_total" in response.text
+    assert "northwind_http_request_duration_seconds_bucket" in response.text
+    assert 'northwind_checkout_attempts_total{outcome="accepted"}' in response.text
+    assert "integration-metrics-token" not in response.text

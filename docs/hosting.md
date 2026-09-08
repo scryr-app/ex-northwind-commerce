@@ -58,8 +58,11 @@ JSON rather than using HTTP status alone as a readiness signal.
 ## Monitoring and limits
 
 Render uses `/health/live` for health probes; it checks only the API process.
-Runtime/access logs are available in the service dashboard. This initial setup
-does not provision Grafana, external uptime alerts, or a public status page.
+Runtime logs and sampled JSON request logs are available in the service dashboard.
+The Public uptime workflow checks the public URL every 30 minutes after merge.
+Protected metrics and optional Grafana Cloud export are available; follow
+[observability setup](observability.md) to connect dashboards and cloud alerts.
+A public status page is not provisioned.
 Do not use frequent `/health` probes: they query the database and can prevent a
 future Neon database from scaling to zero.
 

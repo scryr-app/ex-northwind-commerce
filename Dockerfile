@@ -21,4 +21,4 @@ ENV PATH="/app/api/.venv/bin:$PATH" \
 RUN useradd --create-home --uid 10001 northwind
 USER northwind
 EXPOSE 10000
-CMD ["sh", "-c", "exec uvicorn northwind_api.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD ["sh", "-c", "exec uvicorn northwind_api.main:app --no-access-log --host 0.0.0.0 --port ${PORT:-10000}"]
