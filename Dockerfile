@@ -7,6 +7,7 @@ ENV VITE_API_URL=""
 # Public browser ingestion configuration only; never pass personal API keys here.
 ARG VITE_POSTHOG_PROJECT_TOKEN=""
 ARG VITE_POSTHOG_HOST="https://us.i.posthog.com"
+ARG VITE_POSTHOG_ENVIRONMENT="local"
 RUN npm run build
 
 FROM python:3.12-slim AS runtime

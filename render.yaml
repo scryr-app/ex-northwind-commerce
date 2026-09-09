@@ -12,6 +12,8 @@ services:
     autoDeployTrigger: checksPass
     healthCheckPath: /health/live
     envVars:
+      - key: VITE_POSTHOG_ENVIRONMENT
+        value: production
       - key: APP_ENV
         value: demo
       - key: STRIPE_SECRET_KEY
