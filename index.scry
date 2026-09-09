@@ -197,7 +197,7 @@ northwind_api = Manifest(
     cicd_tool=_CICD,
 )
 
-northwind_postgres = Manifest(
+northwind-postgres = Manifest(
     name="northwind-postgres",
     classification=Classification.database,
     tags=["database", "postgres", "migrations", "orders"],
