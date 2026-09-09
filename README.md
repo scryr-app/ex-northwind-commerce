@@ -200,3 +200,35 @@ northwind-commerce/
 ├── docs/
 └── scripts/
 ```
+
+## Report build status to Crystal
+
+`.github/workflows/report-action-status.yml` sends the completed **CI** and
+**Integration tests** workflow results to both `northwind-commerce/web` and
+`northwind-commerce/api`. Both cards display the same latest reported workflow
+result. The Rust `scryr report-action-status` command reads GitHub's completion
+event, so a failed source workflow is reported too. Deployment and scheduled
+uptime checks are excluded from build status.
+
+Configure these repository **Actions variables**:
+
+| Variable | Value |
+| --- | --- |
+| `SCRYR_ENDPOINT` | Reachable HTTPS Crystal GraphQL URL |
+| `SCRYR_CLERK_ORG_ID` | Organization containing the published Northwind map |
+| `SCRYR_CLI_REF` | Reviewed full commit SHA in `scryr-app/scryr-dev` containing the Rust `report-action-status` command |
+
+Add the **Actions secret** `SCRYR_TOKEN` with permission to report history to
+that Crystal organization. `GITHUB_TOKEN` is supplied automatically with Contents
+read permission for branch discovery. No GitHub credential is stored in the manifest.
+
+Publish the Scryr CLI implementation first, then set `SCRYR_CLI_REF` to its
+commit. Publish this repository's updated `index.scry` to the same Crystal
+organization so the stable manifest IDs match the reports. The reporter workflow
+must be present on this repository's default branch to receive completion events.
+
+The reporter selects `main` if it exists, otherwise `master`, otherwise the
+repository default branch. Runs from other branches are skipped. It reports the
+whole workflow's conclusion, not individual job conclusions. The newer of CI and
+Integration tests determines build status; this is not an aggregate of both checks.
+An open map refreshes every 30 seconds after Crystal receives the report.

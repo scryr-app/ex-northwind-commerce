@@ -1,0 +1,56 @@
+name: Report build status to Scryr
+
+on:
+  workflow_run:
+    workflows: [CI, Integration tests]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Upload shared Web and API build status
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      SCRYR_ENDPOINT: ${{ vars.SCRYR_ENDPOINT }}
+      SCRYR_CLERK_ORG_ID: ${{ vars.SCRYR_CLERK_ORG_ID }}
+      SCRYR_CLI_REF: ${{ vars.SCRYR_CLI_REF }}
+    steps:
+      - name: Validate reporter configuration
+        env:
+          SCRYR_TOKEN: ${{ secrets.SCRYR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in SCRYR_ENDPOINT SCRYR_CLERK_ORG_ID SCRYR_CLI_REF SCRYR_TOKEN; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error::Configure $key in repository Actions variables/secrets."
+              exit 1
+            fi
+          done
+          if [[ ! "$SCRYR_CLI_REF" =~ ^[0-9a-f]{40}$ ]]; then
+            echo '::error::SCRYR_CLI_REF must be a reviewed full Scryr commit SHA containing report-action-status.'
+            exit 1
+          fi
+      # Build only trusted Scryr code; never check out the triggering PR's code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: scryr-app/scryr-dev
+          ref: ${{ vars.SCRYR_CLI_REF }}
+          persist-credentials: false
+      - name: Build native Rust reporter
+        run: cargo build --locked --release --manifest-path crystal/Cargo.toml -p crystal-cli
+      - name: Upload shared workflow result
+        env:
+          SCRYR_TOKEN: ${{ secrets.SCRYR_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          for manifest_id in northwind-commerce/web northwind-commerce/api; do
+            crystal/target/release/scryr report-action-status --manifest-id "$manifest_id" || failed=1
+          done
+          exit "$failed"
