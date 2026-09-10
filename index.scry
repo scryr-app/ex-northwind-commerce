@@ -86,7 +86,11 @@ _POSTHOG_QUERIES = {
         "AND timestamp >= toDateTime({start}) AND timestamp < toDateTime({end}) "
         "AND properties.environment = {environment}"
         + (" AND properties.payment_mode = 'stripe'" if key == "paymentIntents" else "")
-        + (" AND properties.payment_mode = 'stubbed'" if key == "stubbedIntents" else "")
+        + (
+            " AND properties.payment_mode = 'stubbed'"
+            if key == "stubbedIntents"
+            else ""
+        )
     )
     for key, (event, _label) in _POSTHOG_EVENTS.items()
 }
@@ -132,12 +136,11 @@ northwind_web = Manifest(
 # The approved query endpoint is resolved from northwind-grafana-read until its
 # Grafana Cloud endpoint is available to declare here as query_endpoint.
 _GRAFANA_DASHBOARD = (
-    "https://nimbleomelette894.grafana.net"
-    "/d/northwind-observability/northwind-commerce"
+    "https://nimbleomelette894.grafana.net/d/northwind-observability/northwind-commerce"
 )
 _REQUEST_RATE = 'sum(rate(northwind_http_requests_total{job="northwind-api"}[5m]))'
 _LATENCY_BUCKETS = (
-    'sum by (le) (rate(northwind_http_request_duration_seconds_bucket'
+    "sum by (le) (rate(northwind_http_request_duration_seconds_bucket"
     '{job="northwind-api"}[5m]))'
 )
 _NORTHWIND_METRICS = PrometheusSource(
@@ -157,7 +160,7 @@ _NORTHWIND_METRICS = PrometheusSource(
         # Missing 5xx series means zero only when request telemetry exists.
         # With zero traffic the ratio is NaN, which Scryr displays as unavailable.
         "errorRate": (
-            '(100 * (sum(rate(northwind_http_requests_total'
+            "(100 * (sum(rate(northwind_http_requests_total"
             '{job="northwind-api",status_code=~"5.."}[5m]))'
             f" or (0 * {_REQUEST_RATE}))) / ({_REQUEST_RATE})"
         ),
