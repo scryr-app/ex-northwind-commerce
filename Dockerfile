@@ -10,7 +10,7 @@ ARG VITE_POSTHOG_HOST="https://us.i.posthog.com"
 ARG VITE_POSTHOG_ENVIRONMENT="local"
 RUN npm run build
 
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 COPY --from=ghcr.io/astral-sh/uv:0.12.10 /uv /usr/local/bin/uv
 WORKDIR /app/api
 COPY api/pyproject.toml api/uv.lock ./
