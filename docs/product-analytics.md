@@ -36,6 +36,7 @@ Set these in the existing Render service's **Environment** settings:
 ```text
 VITE_POSTHOG_PROJECT_TOKEN=<public project token from PostHog project settings>
 VITE_POSTHOG_HOST=https://us.i.posthog.com
+VITE_POSTHOG_ENVIRONMENT=production
 ```
 
 Render supplies these as Docker build arguments. The root Dockerfile makes them
@@ -51,6 +52,15 @@ is not embedded in `render.yaml` or committed to Git.
 For local development, copy `web/.env.example` to `web/.env.local`, fill in the
 public project token, and restart Vite. Leave it empty for ordinary development
 and automated tests so they do not generate production analytics.
+
+Every event is tagged with the configured `environment`, overriding caller values.
+The default is `local`, including local production builds. Scryr counts only
+explicitly tagged `production` events; historical untagged events are excluded.
+For an existing Render service, add `VITE_POSTHOG_ENVIRONMENT=production` and
+rebuild even if the ingestion token and host are already configured.
+
+See [Scryr read connections](scryr-connections.md) to display aggregate event
+counts alongside Grafana metrics in the architecture diagram.
 
 ## Data collection and free usage
 

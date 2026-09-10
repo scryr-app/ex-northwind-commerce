@@ -4,6 +4,7 @@ const sdk = vi.hoisted(() => ({ init: vi.fn(), capture: vi.fn() }));
 vi.mock("posthog-js", () => ({ default: sdk }));
 
 beforeEach(() => {
+  vi.unstubAllEnvs();
   vi.resetModules();
   vi.resetAllMocks();
 });
@@ -73,8 +74,16 @@ describe("optional product analytics", () => {
       token: "phc_public_ingestion_token",
       distinct_id: "anonymous-random-id", $session_id: "random-session",
       line_count: 1, quantity: 2, total_cents: 37800, payment_mode: "stubbed",
+      environment: "local",
       $process_person_profile: false, $geoip_disable: true
     });
+  });
+
+  it("tags events with the configured environment instead of caller properties", async () => {
+    vi.stubEnv("VITE_POSTHOG_ENVIRONMENT", "production");
+    const { sanitizeEvent } = await import("../src/analytics");
+    const result = sanitizeEvent({ uuid: "test-event", event: "catalog_viewed", properties: { product_count: 3, environment: "local" } });
+    expect(result?.properties.environment).toBe("production");
   });
 
   it("drops automatic or unknown events", async () => {

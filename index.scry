@@ -3,6 +3,9 @@
 from scryr import (
     AuthType,
     CICDToolType,
+    CredentialRef,
+    Metrics,
+    PrometheusSource,
     Classification,
     DeploymentTarget,
     Diagram,
@@ -13,6 +16,7 @@ from scryr import (
     Link,
     LogAggregationType,
     Manifest,
+    PostHogSource,
     MonitoringType,
     ProgrammingLanguage,
     TracingType,
@@ -21,7 +25,7 @@ from scryr import (
     parse_version,
 )
 
-_REPO_URL = Url("https://github.com/scryr/ex-northwind-commerce")
+_REPO_URL = Url("https://github.com/scryr-app/ex-northwind-commerce")
 _LOCAL_DEPLOYMENT = DeploymentTarget.unknown
 _IAC = IaCToolType.terraform
 _MONITORING = MonitoringType.none
@@ -66,7 +70,44 @@ northwind_forge = Forge(
     },
 )
 
+# Project ID, host and read token resolve through the private server connection.
+# The SQL and presentation remain versioned here. Only tagged production events count.
+_POSTHOG_EVENTS = {
+    "catalogViews": ("catalog_viewed", "Catalog views"),
+    "cartUpdates": ("cart_updated", "Cart updates"),
+    "checkoutStarts": ("checkout_started", "Checkout starts"),
+    "paymentIntents": ("checkout_intent_created", "Stripe payment intents"),
+    "stubbedIntents": ("checkout_intent_created", "Stubbed checkout intents"),
+    "checkoutFailures": ("checkout_failed", "Checkout failures"),
+}
+_POSTHOG_QUERIES = {
+    key: (
+        "SELECT count() FROM events WHERE event = '" + event + "' "
+        "AND timestamp >= toDateTime({start}) AND timestamp < toDateTime({end}) "
+        "AND properties.environment = {environment}"
+        + (" AND properties.payment_mode = 'stripe'" if key == "paymentIntents" else "")
+        + (" AND properties.payment_mode = 'stubbed'" if key == "stubbedIntents" else "")
+    )
+    for key, (event, _label) in _POSTHOG_EVENTS.items()
+}
+_NORTHWIND_ANALYTICS = PostHogSource(
+    credentials=CredentialRef(name="northwind-posthog-read"),
+    project_id=598963,
+    query_endpoint="https://us.posthog.com",
+    dashboard_url="https://us.posthog.com/project/598963/dashboard/2074658",
+    environment="production",
+    refresh="on_diagram_load",
+    window=86400,
+    cache_ttl=60,
+    ingestion_delay=120,
+    queries=_POSTHOG_QUERIES,
+    labels={key: label for key, (_event, label) in _POSTHOG_EVENTS.items()},
+    units={key: "events" for key in _POSTHOG_EVENTS},
+)
+
 northwind_web = Manifest(
+    analytics=_NORTHWIND_ANALYTICS,
+    manifest_id="northwind-commerce/web",
     name="northwind-web",
     classification=Classification.public_ui,
     tags=["frontend", "react", "vite", "b2b-storefront"],
@@ -87,7 +128,52 @@ northwind_web = Manifest(
     cicd_tool=_CICD,
 )
 
+# Query configuration is public; credentials are resolved only by the Scryr server.
+# The approved query endpoint is resolved from northwind-grafana-read until its
+# Grafana Cloud endpoint is available to declare here as query_endpoint.
+_GRAFANA_DASHBOARD = (
+    "https://nimbleomelette894.grafana.net"
+    "/d/northwind-observability/northwind-commerce"
+)
+_REQUEST_RATE = 'sum(rate(northwind_http_requests_total{job="northwind-api"}[5m]))'
+_LATENCY_BUCKETS = (
+    'sum by (le) (rate(northwind_http_request_duration_seconds_bucket'
+    '{job="northwind-api"}[5m]))'
+)
+_NORTHWIND_METRICS = PrometheusSource(
+    credentials=CredentialRef(name="northwind-grafana-read"),
+    dashboard_url=_GRAFANA_DASHBOARD,
+    environment="production",
+    refresh="on_diagram_load",
+    window=900,  # Previous 15 minutes, in seconds.
+    step=60,
+    cache_ttl=60,
+    ingestion_delay=120,
+    queries={
+        "requestRate": _REQUEST_RATE,
+        "responseTimeP50": f"1000 * histogram_quantile(0.50, {_LATENCY_BUCKETS})",
+        "responseTimeP95": f"1000 * histogram_quantile(0.95, {_LATENCY_BUCKETS})",
+        "responseTimeP99": f"1000 * histogram_quantile(0.99, {_LATENCY_BUCKETS})",
+        # Missing 5xx series means zero only when request telemetry exists.
+        # With zero traffic the ratio is NaN, which Scryr displays as unavailable.
+        "errorRate": (
+            '(100 * (sum(rate(northwind_http_requests_total'
+            '{job="northwind-api",status_code=~"5.."}[5m]))'
+            f" or (0 * {_REQUEST_RATE}))) / ({_REQUEST_RATE})"
+        ),
+    },
+    units={
+        "requestRate": "req/s",
+        "responseTimeP50": "ms",
+        "responseTimeP95": "ms",
+        "responseTimeP99": "ms",
+        "errorRate": "%",
+    },
+)
+
 northwind_api = Manifest(
+    metrics=Metrics(provider=_NORTHWIND_METRICS),
+    manifest_id="northwind-commerce/api",
     name="northwind-api",
     classification=Classification.internal_api,
     tags=["api", "fastapi", "catalog", "checkout", "risk"],
@@ -111,7 +197,7 @@ northwind_api = Manifest(
     cicd_tool=_CICD,
 )
 
-northwind_postgres = Manifest(
+northwind-postgres = Manifest(
     name="northwind-postgres",
     classification=Classification.database,
     tags=["database", "postgres", "migrations", "orders"],
@@ -178,4 +264,7 @@ stripe_integration = Manifest(
     cicd_tool=CICDToolType.none,
 )
 
-ex-northwind-commerce-diagram = Diagram(name="Northwind Commerce Diagram", manifests=[northwind_web, northwind_redis, stripe_integration])
+northwind_commerce_diagram = Diagram(
+    name="Northwind Commerce Diagram",
+    manifests=[northwind_web, northwind_api, northwind_redis, stripe_integration],
+)

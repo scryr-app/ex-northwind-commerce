@@ -29,12 +29,14 @@ export const sanitizeEvent: BeforeSendFn = (event) => {
   event.properties = Object.fromEntries(
     Object.entries(event.properties).filter(([key]) => sdkProperties.has(key) || allowed.includes(key))
   );
+  event.properties.environment = analyticsEnvironment;
   event.properties.$process_person_profile = false;
   event.properties.$geoip_disable = true;
   return event;
 };
 
 let enabled = false;
+const analyticsEnvironment = import.meta.env.VITE_POSTHOG_ENVIRONMENT || "local";
 
 export function initializeAnalytics(
   token = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN ?? "",

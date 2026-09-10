@@ -148,6 +148,9 @@ Primary references: [Grafana pricing](https://grafana.com/pricing/),
 
 ## Troubleshooting and Scryr
 
+See [Scryr read connections](scryr-connections.md) for the private Grafana and
+PostHog configuration used by the diagram's metric and analytics cards.
+
 If Render says Live but the public URL responds with `x-render-routing: no-server`,
 inspect the **Public uptime** result and Render events. An internal healthy process
 is not proof of public availability. Missing telemetry can also mean an idle
