@@ -208,19 +208,22 @@ northwind-commerce/
 `northwind-commerce/api`. Both cards display the same latest reported workflow
 result. The Rust `scryr report-action-status` command reads GitHub's completion
 event, so a failed source workflow is reported too. Deployment and scheduled
-uptime checks are excluded from build status.
+uptime checks are excluded from build status. Reporting is opt-in: its job remains
+skipped until `SCRYR_ENDPOINT` and `SCRYR_CLI_REF` are configured.
 
 Configure these repository **Actions variables**:
 
 | Variable | Value |
 | --- | --- |
-| `SCRYR_ENDPOINT` | Reachable HTTPS Crystal GraphQL URL |
-| `SCRYR_CLERK_ORG_ID` | Organization containing the published Northwind map |
+| `SCRYR_ENDPOINT` | Reachable HTTPS GraphQL URL, or loopback URL for a same-host runner |
+| `SCRYR_CLERK_ORG_ID` | Organization containing the published map; remote mode only |
 | `SCRYR_CLI_REF` | Reviewed full commit SHA in `scryr-app/scryr-dev` containing the Rust `report-action-status` command |
+| `SCRYR_RUNNER` | Optional dedicated self-hosted label for loopback OSS; defaults to `ubuntu-24.04` |
 
-Add the **Actions secret** `SCRYR_TOKEN` with permission to report history to
-that Crystal organization. `GITHUB_TOKEN` is supplied automatically with Contents
-read permission for branch discovery. No GitHub credential is stored in the manifest.
+For a remote Clerk-authenticated server, add the **Actions secret** `SCRYR_TOKEN`
+with permission to report history to that organization. Local same-host mode does
+not need it. `GITHUB_TOKEN` is supplied automatically with Contents read permission
+for branch discovery. No GitHub credential is stored in the manifest.
 
 Publish the Scryr CLI implementation first, then set `SCRYR_CLI_REF` to its
 commit. Publish this repository's updated `index.scry` to the same Crystal
@@ -232,3 +235,6 @@ repository default branch. Runs from other branches are skipped. It reports the
 whole workflow's conclusion, not individual job conclusions. The newer of CI and
 Integration tests determines build status; this is not an aggregate of both checks.
 An open map refreshes every 30 seconds after Crystal receives the report.
+For a loopback OSS server, use a dedicated self-hosted runner; GitHub-hosted runners
+cannot reach your machine's `127.0.0.1`. See the complete
+[OSS credentials and connection guide](docs/scryr-connections.md#6-configure-github-actions-reporting).

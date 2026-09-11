@@ -11,7 +11,11 @@ permissions:
 jobs:
   report:
     name: Upload shared Web and API build status
-    runs-on: ubuntu-24.04
+    # Reporting is opt-in. Leave the workflow skipped until the endpoint and
+    # reviewed Scryr revision are configured instead of failing every source run.
+    if: ${{ vars.SCRYR_ENDPOINT != '' && vars.SCRYR_CLI_REF != '' }}
+    # Use a self-hosted label when reporting to a loopback-only OSS server.
+    runs-on: ${{ vars.SCRYR_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 30
     env:
       SCRYR_ENDPOINT: ${{ vars.SCRYR_ENDPOINT }}
@@ -24,12 +28,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in SCRYR_ENDPOINT SCRYR_CLERK_ORG_ID SCRYR_CLI_REF SCRYR_TOKEN; do
+          for key in SCRYR_ENDPOINT SCRYR_CLI_REF; do
             if [[ -z "${!key}" ]]; then
               echo "::error::Configure $key in repository Actions variables/secrets."
               exit 1
             fi
           done
+          if [[ "$SCRYR_ENDPOINT" != http://127.0.0.1:* &&
+                "$SCRYR_ENDPOINT" != http://localhost:* ]]; then
+            for key in SCRYR_CLERK_ORG_ID SCRYR_TOKEN; do
+              if [[ -z "${!key}" ]]; then
+                echo "::error::Remote reporting requires $key."
+                exit 1
+              fi
+            done
+          fi
           if [[ ! "$SCRYR_CLI_REF" =~ ^[0-9a-f]{40}$ ]]; then
             echo '::error::SCRYR_CLI_REF must be a reviewed full Scryr commit SHA containing report-action-status.'
             exit 1

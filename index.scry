@@ -155,7 +155,7 @@ _NORTHWIND_METRICS = PrometheusSource(
 northwind_api = Manifest(
     metrics=Metrics(provider=_NORTHWIND_METRICS),
     manifest_id="northwind-commerce/api",
-    name="northwind_api",
+    name="nwapi",
     classification=Classification.internal_api,
     tags=["api", "fastapi", "catalog", "checkout", "risk"],
     forges=[northwind_forge.name],
@@ -224,7 +224,7 @@ northwind-postgres = Manifest(
 )
 
 northwind_redis = Manifest(
-    name="northwind-redis",
+    name="northwind-cache",
     classification=Classification.cache_store,
     tags=["cache", "redis", "session-state"],
     forges=[northwind_forge.name],
