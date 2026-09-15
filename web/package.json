@@ -9,13 +9,13 @@
     "test": "vitest"
   },
   "dependencies": {
-    "posthog-js": "1.428.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "posthog-js": "1.430.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
