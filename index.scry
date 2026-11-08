@@ -1,8 +1,16 @@
 """Scryr manifest for the Northwind Commerce sample."""
 
+from scryr.delivery import (
+    ActionsBuildSource,
+    DeliveryTask,
+    DeliveryTasks,
+    DeliveryVerificationTask,
+    GitHubDelivery,
+    GitHubReleaseSource,
+    GitHubRepository,
+)
+
 from scryr import (
-    AuthType,
-    CICDToolType,
     Classification,
     CredentialRef,
     DeploymentTarget,
@@ -10,28 +18,26 @@ from scryr import (
     Forge,
     ForgeTask,
     ForgeTool,
-    IaCToolType,
     Link,
-    LogAggregationType,
     Manifest,
-    Metrics,
-    MonitoringType,
     PostHogSource,
     ProgrammingLanguage,
-    PrometheusSource,
-    TracingType,
     Url,
     WebFramework,
     parse_version,
 )
 
 _REPO_URL = Url("https://github.com/scryr-app/ex-northwind-commerce")
-_LOCAL_DEPLOYMENT = DeploymentTarget.unknown
-_IAC = IaCToolType.terraform
-_MONITORING = MonitoringType.none
-_LOGS = LogAggregationType.none
-_TRACING = TracingType.none
-_CICD = CICDToolType.github_actions
+_LOCAL_DEPLOYMENTS = [DeploymentTarget.unknown, DeploymentTarget.terraform]
+_DELIVERY = GitHubDelivery(
+    repository=GitHubRepository(owner="scryr-app", name="ex-northwind-commerce"),
+    builds=ActionsBuildSource(workflow=".github/workflows/ci.yml"),
+    releases=GitHubReleaseSource(include_drafts=False, include_prereleases=False),
+    tasks=DeliveryTasks(
+        collect=DeliveryTask(limit=20, verify_attestations=False),
+        verify=DeliveryVerificationTask(limit=20),
+    ),
+)
 
 northwind_forge = Forge(
     name="Northwind Commerce Service",
@@ -110,71 +116,29 @@ _NORTHWIND_ANALYTICS = PostHogSource(
 )
 
 
-# Query configuration is public; credentials are resolved only by the Scryr server.
-# The approved query endpoint is resolved from northwind-grafana-read until its
-# Grafana Cloud endpoint is available to declare here as query_endpoint.
+# Grafana remains a linked dashboard. Current Scryr manifests support PostHog
+# analytics, but do not serialize a Prometheus query source.
 _GRAFANA_DASHBOARD = (
     "https://nimbleomelette894.grafana.net/d/northwind-observability/northwind-commerce"
 )
-_REQUEST_RATE = 'sum(rate(northwind_http_requests_total{job="northwind-api"}[5m]))'
-_LATENCY_BUCKETS = (
-    "sum by (le) (rate(northwind_http_request_duration_seconds_bucket"
-    '{job="northwind-api"}[5m]))'
-)
-_NORTHWIND_METRICS = PrometheusSource(
-    credentials=CredentialRef(name="northwind-grafana-read"),
-    dashboard_url=_GRAFANA_DASHBOARD,
-    environment="production",
-    refresh="on_diagram_load",
-    window=900,  # Previous 15 minutes, in seconds.
-    step=60,
-    cache_ttl=60,
-    ingestion_delay=120,
-    queries={
-        "requestRate": _REQUEST_RATE,
-        "responseTimeP50": f"1000 * histogram_quantile(0.50, {_LATENCY_BUCKETS})",
-        "responseTimeP95": f"1000 * histogram_quantile(0.95, {_LATENCY_BUCKETS})",
-        "responseTimeP99": f"1000 * histogram_quantile(0.99, {_LATENCY_BUCKETS})",
-        # Missing 5xx series means zero only when request telemetry exists.
-        # With zero traffic the ratio is NaN, which Scryr displays as unavailable.
-        "errorRate": (
-            "(100 * (sum(rate(northwind_http_requests_total"
-            '{job="northwind-api",status_code=~"5.."}[5m]))'
-            f" or (0 * {_REQUEST_RATE}))) / ({_REQUEST_RATE})"
-        ),
-    },
-    units={
-        "requestRate": "req/s",
-        "responseTimeP50": "ms",
-        "responseTimeP95": "ms",
-        "responseTimeP99": "ms",
-        "errorRate": "%",
-    },
-)
 
 northwind_api = Manifest(
-    metrics=Metrics(provider=_NORTHWIND_METRICS),
     manifest_id="northwind-commerce/api",
     name="nwapi",
     classification=Classification.internal_api,
     tags=["api", "fastapi", "catalog", "checkout", "risk"],
     forges=[northwind_forge.name],
     description="FastAPI service that exposes product catalog, order, risk-control, and checkout workflows for the storefront.",
-    language=ProgrammingLanguage.python,
+    languages=[ProgrammingLanguage.python],
     frameworks=[WebFramework.fastapi],
-    deployment=_LOCAL_DEPLOYMENT,
-    owner_team="Commerce",
-    auth_type=AuthType.api_key,
-    monitoring=_MONITORING,
-    log_aggregation=_LOGS,
-    tracing=_TRACING,
-    iac_tool=_IAC,
-    max_replicas=2,
-    min_replicas=1,
+    deployments=_LOCAL_DEPLOYMENTS,
+    owners="Commerce",
     docs=["api/src/northwind_api/main.py", "docs/architecture.md", "docs/runbook.md"],
-    links=[Link(site_name="Source", http_url=_REPO_URL)],
-    repo_url=_REPO_URL,
-    cicd_tool=_CICD,
+    links=[
+        Link(site_name="Source", http_url=_REPO_URL),
+        Link(site_name="Grafana", http_url=Url(_GRAFANA_DASHBOARD)),
+    ],
+    delivery=_DELIVERY,
 )
 
 northwind_web = Manifest(
@@ -186,21 +150,15 @@ northwind_web = Manifest(
     forges=[northwind_forge.name],
     connections=[northwind_api],
     description="React/Vite B2B storefront for browsing Northwind products, building carts, and checking out through the API.",
-    language=ProgrammingLanguage.typescript,
-    deployment=_LOCAL_DEPLOYMENT,
-    owner_team="Commerce",
-    auth_type=AuthType.none,
-    monitoring=_MONITORING,
-    log_aggregation=_LOGS,
-    tracing=_TRACING,
-    iac_tool=_IAC,
+    languages=[ProgrammingLanguage.typescript],
+    deployments=_LOCAL_DEPLOYMENTS,
+    owners="Commerce",
     docs=["web/src/App.tsx", "web/src/api.ts", "README.md"],
     links=[Link(site_name="Source", http_url=_REPO_URL)],
-    repo_url=_REPO_URL,
-    cicd_tool=_CICD,
+    delivery=_DELIVERY,
 )
 
-northwind-postgres = Manifest(
+northwind_postgres = Manifest(
     name="northwind-postgres",
     classification=Classification.database,
     tags=["database", "postgres", "migrations", "orders"],
@@ -208,19 +166,11 @@ northwind-postgres = Manifest(
     connections=[northwind_api],
     description="PostgreSQL database for catalog, customer, and order state, managed through SQL migrations under api/migrations.",
     version=parse_version("16.0.0"),
-    language=ProgrammingLanguage.sql,
-    deployment=_LOCAL_DEPLOYMENT,
-    owner_team="Commerce",
-    auth_type=AuthType.basic,
-    monitoring=_MONITORING,
-    log_aggregation=_LOGS,
-    tracing=_TRACING,
-    iac_tool=_IAC,
-    max_replicas=1,
-    min_replicas=1,
+    languages=[ProgrammingLanguage.sql],
+    deployments=_LOCAL_DEPLOYMENTS,
+    owners="Commerce",
     docs=["api/migrations/001_initial.sql"],
-    repo_url=_REPO_URL,
-    cicd_tool=_CICD,
+    links=[Link(site_name="Source", http_url=_REPO_URL)],
 )
 
 northwind_redis = Manifest(
@@ -231,18 +181,10 @@ northwind_redis = Manifest(
     connections=[northwind_api],
     description="Redis cache used by the API for low-latency workflow and checkout support.",
     version=parse_version("7.0.0"),
-    language=ProgrammingLanguage.c,
-    deployment=_LOCAL_DEPLOYMENT,
-    owner_team="Commerce",
-    auth_type=AuthType.basic,
-    monitoring=_MONITORING,
-    log_aggregation=_LOGS,
-    tracing=_TRACING,
-    iac_tool=_IAC,
-    max_replicas=1,
-    min_replicas=1,
-    repo_url=_REPO_URL,
-    cicd_tool=_CICD,
+    languages=[ProgrammingLanguage.c],
+    deployments=_LOCAL_DEPLOYMENTS,
+    owners="Commerce",
+    links=[Link(site_name="Source", http_url=_REPO_URL)],
 )
 
 stripe_integration = Manifest(
@@ -252,19 +194,10 @@ stripe_integration = Manifest(
     forges=[northwind_forge.name],
     connections=[northwind_api],
     description="Stripe test-mode payment integration guarded by order velocity, high-value purchase, and expedited shipping risk controls.",
-    deployment=DeploymentTarget.unknown,
-    owner_team="Commerce",
-    auth_type=AuthType.api_key,
-    monitoring=_MONITORING,
-    log_aggregation=_LOGS,
-    tracing=_TRACING,
-    iac_tool=_IAC,
-    max_replicas=1,
-    min_replicas=1,
+    deployments=[DeploymentTarget.unknown],
+    owners="Commerce",
     docs=["api/src/northwind_api/stripe_client.py", "api/src/northwind_api/risk.py"],
     links=[Link(site_name="Stripe Docs", http_url=Url("https://stripe.com/docs"))],
-    repo_url=_REPO_URL,
-    cicd_tool=CICDToolType.none,
 )
 
 northwind_commerce_diagram = Diagram(
