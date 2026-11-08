@@ -69,7 +69,7 @@ export async function listProducts(): Promise<Product[]> {
   }
 }
 
-export async function createCheckout(lines: CartLine[]): Promise<CheckoutResponse> {
+export async function createCheckout(lines: CartLine[], turnstileToken = ""): Promise<CheckoutResponse> {
   const response = await fetch(`${apiUrl}/checkout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -77,7 +77,8 @@ export async function createCheckout(lines: CartLine[]): Promise<CheckoutRespons
       accountId: "northwind-wholesale",
       currency: "usd",
       shippingSpeed: "expedited",
-      lines
+      lines,
+      turnstileToken
     })
   });
 

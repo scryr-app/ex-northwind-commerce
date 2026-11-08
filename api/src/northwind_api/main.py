@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import psycopg
 import redis
+import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,9 +15,16 @@ from northwind_api.config import get_settings
 from northwind_api.observability import RequestTelemetryMiddleware, Telemetry
 from northwind_api.risk import score_checkout
 from northwind_api.schemas import CheckoutRequest, CheckoutResponse, ProductResponse
+from northwind_api.services import send_order_email, verify_turnstile
 from northwind_api.stripe_client import create_payment_intent
 
 settings = get_settings()
+sentry_sdk.init(
+    dsn=settings.sentry_dsn.get_secret_value() or None,
+    environment=settings.app_env,
+    release=settings.render_git_commit or None,
+    traces_sample_rate=settings.sentry_traces_sample_rate,
+)
 telemetry = Telemetry(settings)
 
 
@@ -102,7 +110,18 @@ def catalog() -> list[ProductResponse]:
 
 
 @app.post("/checkout", response_model=CheckoutResponse, response_model_by_alias=True)
-def checkout(request: CheckoutRequest) -> CheckoutResponse:
+def checkout(request: CheckoutRequest, http_request: Request) -> CheckoutResponse:
+    try:
+        turnstile_valid = verify_turnstile(
+            settings,
+            request.turnstile_token,
+            http_request.client.host if http_request.client else None,
+        )
+    except Exception as error:
+        sentry_sdk.capture_exception(error)
+        raise HTTPException(status_code=503, detail="Checkout verification unavailable") from error
+    if not turnstile_valid:
+        raise HTTPException(status_code=400, detail="Checkout verification failed")
     selected_products = []
     order_total_cents = 0
     total_quantity = 0
@@ -147,6 +166,7 @@ def checkout(request: CheckoutRequest) -> CheckoutResponse:
             },
         )
 
+    send_order_email(settings, checkout_id, order_total_cents)
     return CheckoutResponse(
         checkout_id=checkout_id,
         payment_intent_id=payment["payment_intent_id"],

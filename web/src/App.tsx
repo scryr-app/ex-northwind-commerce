@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CartLine, CheckoutResponse, Product, createCheckout, listProducts } from "./api";
 import { cartTotalCents, formatCurrency, riskTone } from "./domain";
 import { trackEvent } from "./analytics";
+import { Turnstile } from "./Turnstile";
 
 type QuantityMap = Record<string, number>;
 
@@ -11,6 +12,7 @@ export function App() {
   const [checkout, setCheckout] = useState<CheckoutResponse | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -66,7 +68,7 @@ export function App() {
         productId: line.product.id,
         quantity: line.quantity
       }));
-      const result = await createCheckout(lines);
+      const result = await createCheckout(lines, turnstileToken);
       setCheckout(result);
       trackEvent("checkout_intent_created", {
         ...summary,
@@ -168,6 +170,7 @@ export function App() {
             <strong>{formatCurrency(totalCents)}</strong>
           </div>
 
+          <Turnstile onToken={setTurnstileToken} />
           <button disabled={cartLines.length === 0 || isCheckingOut} onClick={submitCheckout}>
             {isCheckingOut ? "Authorizing..." : "Create payment intent"}
           </button>

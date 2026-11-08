@@ -24,6 +24,7 @@ class CheckoutRequest(BaseModel):
     currency: str = "usd"
     shipping_speed: str = Field("standard", validation_alias="shippingSpeed")
     lines: list[CheckoutLine] = Field(min_length=1)
+    turnstile_token: str = Field("", validation_alias="turnstileToken", max_length=4096)
 
 
 class CheckoutResponse(BaseModel):

@@ -56,3 +56,19 @@ def test_checkout_rejects_unknown_product():
     )
 
     assert response.status_code == 404
+
+
+def test_checkout_rejects_failed_turnstile(monkeypatch):
+    monkeypatch.setattr("northwind_api.main.verify_turnstile", lambda *_: False)
+
+    response = client.post(
+        "/checkout",
+        json={
+            "accountId": "northwind-wholesale",
+            "lines": [{"productId": "chai-001", "quantity": 1}],
+            "turnstileToken": "invalid",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Checkout verification failed"}

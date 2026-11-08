@@ -17,12 +17,13 @@ dependencies = [
   "prometheus-client>=0.22",
   "opentelemetry-sdk>=1.44,<2",
   "opentelemetry-exporter-otlp-proto-http>=1.44,<2",
+  "httpx>=0.28.1",
+  "sentry-sdk[fastapi]>=2.0,<3",
 ]
 
 [project.optional-dependencies]
 dev = [
   "allure-pytest>=2.13.5",
-  "httpx>=0.28.1",
   "pytest>=8.3.4",
   "pytest-cov>=6.0.0",
   "pytest-html>=4.1.1",

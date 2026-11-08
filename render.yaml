@@ -28,3 +28,16 @@ services:
         value: "0.1"
       - key: OTEL_METRIC_EXPORT_INTERVAL
         value: "60"
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.1"
+      # Set these as secret environment values in Render after provisioning.
+      - key: SENTRY_DSN
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ORDER_EMAIL_FROM
+        sync: false
+      - key: ORDER_EMAIL_TO
+        sync: false
