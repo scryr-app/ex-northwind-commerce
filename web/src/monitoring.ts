@@ -10,6 +10,15 @@ export function initializeMonitoring() {
     tracesSampleRate: 0.1,
     sendDefaultPii: false
   });
+
+  if (
+    import.meta.env.VITE_SENTRY_TEST_ENABLED === "true" &&
+    new URLSearchParams(window.location.search).get("sentry-test") === "1"
+  ) {
+    queueMicrotask(() => {
+      throw new Error("Controlled Northwind frontend Sentry test error");
+    });
+  }
 }
 
 export { Sentry };

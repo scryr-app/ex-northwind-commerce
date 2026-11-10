@@ -76,6 +76,17 @@ def liveness() -> dict[str, str]:
     return {"api": "ok"}
 
 
+@app.post("/__sentry-test", include_in_schema=False)
+def sentry_test(request: Request):
+    token = settings.sentry_test_token.get_secret_value()
+    supplied = request.headers.get("authorization", "")
+    if not token:
+        raise HTTPException(status_code=404)
+    if not compare_digest(supplied.encode(), f"Bearer {token}".encode()):
+        raise HTTPException(status_code=401, headers={"WWW-Authenticate": "Bearer"})
+    raise RuntimeError("Controlled Northwind backend Sentry test error")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     status = {"api": "ok", "postgres": "unavailable", "redis": "unavailable"}

@@ -30,8 +30,12 @@ services:
         value: "60"
       - key: SENTRY_TRACES_SAMPLE_RATE
         value: "0.1"
+      - key: VITE_SENTRY_TEST_ENABLED
+        value: "false"
       # Set these as secret environment values in Render after provisioning.
       - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_TEST_TOKEN
         sync: false
       - key: TURNSTILE_SECRET_KEY
         sync: false

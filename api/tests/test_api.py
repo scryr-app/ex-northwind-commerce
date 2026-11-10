@@ -1,8 +1,10 @@
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 
-from northwind_api.main import app
+from northwind_api import main
 
 
+app = main.app
 client = TestClient(app)
 
 
@@ -26,6 +28,22 @@ def test_catalog_returns_products():
     products = response.json()
     assert products[0]["sku"] == "BEV-CHAI-48"
     assert "unitPriceCents" in products[0]
+
+
+def test_sentry_test_route_is_disabled_without_token(monkeypatch):
+    monkeypatch.setattr(main.settings, "sentry_test_token", SecretStr(""))
+    assert client.post("/__sentry-test").status_code == 404
+
+
+def test_sentry_test_route_requires_token_and_raises(monkeypatch):
+    monkeypatch.setattr(main.settings, "sentry_test_token", SecretStr("test-token"))
+    assert client.post("/__sentry-test").status_code == 401
+
+    with TestClient(main.app, raise_server_exceptions=False) as test_client:
+        response = test_client.post(
+            "/__sentry-test", headers={"Authorization": "Bearer test-token"}
+        )
+    assert response.status_code == 500
 
 
 def test_checkout_creates_stubbed_payment_intent():
