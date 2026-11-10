@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     otel_metric_export_interval: int = Field(default=60, ge=60)
     sentry_dsn: SecretStr = SecretStr("")
     sentry_traces_sample_rate: float = Field(default=0.1, ge=0, le=1)
+    sentry_test_token: SecretStr = SecretStr("")
     turnstile_secret_key: SecretStr = SecretStr("")
     resend_api_key: SecretStr = SecretStr("")
     order_email_from: str = ""
