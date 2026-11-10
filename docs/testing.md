@@ -81,3 +81,10 @@ To generate the same reports locally, replace each pytest command above with
 Existing **CI** jobs continue running unit tests. **Verify deployment** remains a
 separate smoke test for the public Render URL, so a hosting routing outage is
 reported independently of application integration failures.
+
+The **CI** workflow also publishes unit-test reports for 14 days. The
+`api-test-results` artifact contains branch-aware coverage XML/HTML, JUnit XML,
+and pytest HTML/JSON reports. The `web-test-results` artifact contains V8
+coverage as HTML, LCOV, and JSON plus JUnit XML. Test report locations are
+linked from each job summary, and artifacts are uploaded even when a test or
+build step fails.
