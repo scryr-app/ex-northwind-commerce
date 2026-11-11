@@ -90,3 +90,63 @@ def test_checkout_rejects_failed_turnstile(monkeypatch):
 
     assert response.status_code == 400
     assert response.json() == {"detail": "Checkout verification failed"}
+
+
+def test_checkout_rejects_insufficient_inventory():
+    response = client.post(
+        "/checkout",
+        json={
+            "accountId": "northwind-wholesale",
+            "lines": [{"productId": "ikura-002", "quantity": 43}],
+        },
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Insufficient inventory for SEA-IKURA-24"}
+
+
+def test_health_reports_each_dependency_independently(monkeypatch):
+    class Cursor:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def execute(self, statement):
+            assert statement == "select 1"
+
+        def fetchone(self):
+            return (1,)
+
+    class Connection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def cursor(self):
+            return Cursor()
+
+    monkeypatch.setattr(main.psycopg, "connect", lambda *args, **kwargs: Connection())
+    monkeypatch.setattr(
+        main.redis,
+        "from_url",
+        lambda *args, **kwargs: type("Redis", (), {"ping": lambda self: True})(),
+    )
+    assert client.get("/health").json() == {
+        "api": "ok",
+        "postgres": "ok",
+        "redis": "ok",
+    }
+
+    def unavailable(*args, **kwargs):
+        raise OSError
+
+    monkeypatch.setattr(main.psycopg, "connect", unavailable)
+    monkeypatch.setattr(main.redis, "from_url", unavailable)
+    assert client.get("/health").json() == {
+        "api": "ok",
+        "postgres": "unavailable",
+        "redis": "unavailable",
+    }
